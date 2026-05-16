@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WriteMaster</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <span class="logo">✍️</span>
+      <div>
+        <h1>WriteMaster</h1>
+        <p class="subtitle">AI 写作助手</p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="settings">⚙️ 设置</button>
+      <button class="tab" data-tab="usage">📊 用量</button>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="tab-settings" class="tab-content">
+      <div class="form-group">
+        <label for="apiKey">DeepSeek API Key</label>
+        <input type="password" id="apiKey" placeholder="sk-xxxxxxxxxxxxxxxx" autocomplete="off">
+        <button id="toggleApiKey" class="toggle-btn">👁️</button>
+      </div>
+
+      <div class="form-group">
+        <label for="defaultTone">默认语气风格</label>
+        <select id="defaultTone">
+          <option value="professional">💼 专业</option>
+          <option value="friendly">😊 友好</option>
+          <option value="concise" selected>🎯 简洁</option>
+          <option value="creative">🎨 创意</option>
+        </select>
+      </div>
+
+      <div class="tier-info">
+        <p><strong>📋 功能说明</strong></p>
+        <ul>
+          <li>✨ <strong>润色</strong>：让表达更流畅专业</li>
+          <li>🔄 <strong>改写</strong>：换种说法保持原意</li>
+          <li>📝 <strong>扩展</strong>：增加细节和例子</li>
+          <li>✂️ <strong>精简</strong>：去掉冗余保留核心</li>
+          <li>🌐 <strong>翻译</strong>：支持14种语言</li>
+        </ul>
+      </div>
+
+      <button id="saveBtn" class="btn-primary">💾 保存设置</button>
+      <p id="saveMsg" class="save-msg"></p>
+    </div>
+
+    <!-- Usage Tab -->
+    <div id="tab-usage" class="tab-content" style="display:none;">
+      <div class="usage-card">
+        <div class="usage-stat">
+          <span class="usage-number" id="usageCount">0</span>
+          <span class="usage-label">本月已用</span>
+        </div>
+        <div class="usage-stat">
+          <span class="usage-number" id="usageRemaining">100</span>
+          <span class="usage-label">剩余次数</span>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <p class="tier-info">🎁 免费版：每月 100 次 | Pro 版：¥39/月 无限次</p>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
