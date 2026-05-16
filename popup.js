@@ -1,4 +1,15 @@
 // WriteMaster - Popup Script
+
+// --- API Key Encoding/Decoding ---
+function encodeApiKey(key) {
+  return key.split('').map(c => c.charCodeAt(0)).join(',');
+}
+
+function decodeApiKey(encoded) {
+  if (!encoded) return '';
+  return encoded.split(',').map(c => String.fromCharCode(parseInt(c))).join('');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   loadUsage();
@@ -27,7 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!apiKey) { showMsg('请输入 API Key', 'error'); return; }
     if (!apiKey.startsWith('sk-')) { showMsg('API Key 格式错误，应以 sk- 开头', 'error'); return; }
 
-    chrome.storage.sync.set({ apiKey, defaultTone }, () => {
+    // Encode before storing - hide from plain-text storage
+    const encodedKey = encodeApiKey(apiKey);
+    chrome.storage.sync.set({ apiKey: encodedKey, defaultTone }, () => {
       showMsg('✅ 设置已保存', 'success');
     });
   });
@@ -43,8 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loadSettings() {
   chrome.storage.sync.get(['apiKey', 'defaultTone'], (result) => {
-    if (result.apiKey) document.getElementById('apiKey').value = result.apiKey;
-    if (result.defaultTone) document.getElementById('defaultTone').value = result.defaultTone;
+    if (result.apiKey) {
+      // Decode stored value
+      const decodedKey = decodeApiKey(result.apiKey);
+      document.getElementById('apiKey').value = decodedKey;
+    }
+    if (result.defaultTone) {
+      document.getElementById('defaultTone').value = result.defaultTone;
+    }
   });
 }
 

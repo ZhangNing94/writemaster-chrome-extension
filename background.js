@@ -4,6 +4,12 @@
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 const FREE_MONTHLY_LIMIT = 100;
 
+// --- API Key Decoding ---
+function decodeApiKey(encoded) {
+  if (!encoded) return '';
+  return encoded.split(',').map(c => String.fromCharCode(parseInt(c))).join('');
+}
+
 // --- Prompt Templates ---
 const OPERATION_PROMPTS = {
   polish: '请润色以下文本，保持原意但让表达更流畅、更专业。直接输出润色后的文本，不要添加任何解释：',
@@ -109,12 +115,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return;
       }
 
-      // Check API key
-      const { apiKey } = await chrome.storage.sync.get('apiKey');
-      if (!apiKey) {
+      // Retrieve and decode API key
+      const { apiKey: encodedKey } = await chrome.storage.sync.get('apiKey');
+      if (!encodedKey) {
         sendResponse({ success: false, error: '请先设置 DeepSeek API Key' });
         return;
       }
+
+      const apiKey = decodeApiKey(encodedKey);
 
       // Check usage
       const withinLimit = await checkUsageLimit();
