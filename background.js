@@ -1,13 +1,20 @@
 // WriteMaster - Background Service Worker
 // Handles DeepSeek API calls for writing assistance
 
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
-const FREE_MONTHLY_LIMIT = 100;
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
+const FREE_DAILY_LIMIT = 3;
 
-// --- API Key Decoding ---
-function decodeApiKey(encoded) {
-  if (!encoded) return '';
-  return encoded.split(',').map(c => String.fromCharCode(parseInt(c))).join('');
+// --- Built-in API Key (base64 obfuscated) ---
+const BUILT_IN_KEY_B64 = 'c2stODc4Nzc1YmQtaXdXNHI5MXhBRGk3WktZVlA4WDFZeTRjSGY2ZE9qbA==';
+function _builtinKey() { return atob(BUILT_IN_KEY_B64); }
+
+// --- Get effective API key (user's key in chrome.storage.sync, fallback to built-in) ---
+async function getEffectiveApiKey() {
+  const { apiKey: encodedKey } = await chrome.storage.sync.get('apiKey');
+  if (encodedKey) {
+    try { return atob(encodedKey); } catch(e) { return _builtinKey(); }
+  }
+  return _builtinKey();
 }
 
 // --- Prompt Templates ---
@@ -37,17 +44,17 @@ const MODE_LABELS = {
   polish: '润色', rewrite: '改写', expand: '扩展', shorten: '精简', translate: '翻译'
 };
 
-// --- Usage Tracking ---
+// --- Usage Tracking (daily, not monthly) ---
 async function checkUsageLimit() {
-  const { usageCount = 0, lastResetMonth = '' } = await chrome.storage.local.get(['usageCount', 'lastResetMonth']);
-  const currentMonth = `${new Date().getFullYear()}-${new Date().getMonth()}`;
+  const { usageCount = 0, lastResetDate = '' } = await chrome.storage.local.get(['usageCount', 'lastResetDate']);
+  const today = new Date().toDateString();
 
-  if (lastResetMonth !== currentMonth) {
-    await chrome.storage.local.set({ usageCount: 0, lastResetMonth: currentMonth });
+  if (lastResetDate !== today) {
+    await chrome.storage.local.set({ usageCount: 0, lastResetDate: today });
     return true;
   }
 
-  return usageCount < FREE_MONTHLY_LIMIT;
+  return usageCount < FREE_DAILY_LIMIT;
 }
 
 async function incrementUsage() {
@@ -115,19 +122,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return;
       }
 
-      // Retrieve and decode API key
-      const { apiKey: encodedKey } = await chrome.storage.sync.get('apiKey');
-      if (!encodedKey) {
-        sendResponse({ success: false, error: '请先设置 DeepSeek API Key' });
-        return;
-      }
-
-      const apiKey = decodeApiKey(encodedKey);
+      // Get effective API key (built-in or user's own)
+      const apiKey = await getEffectiveApiKey();
 
       // Check usage
       const withinLimit = await checkUsageLimit();
       if (!withinLimit) {
-        sendResponse({ success: false, error: `本月免费额度（${FREE_MONTHLY_LIMIT}次）已用完` });
+        sendResponse({ success: false, error: `今日免费额度（${FREE_DAILY_LIMIT}次）已用完，请明天再试或配置自己的API Key解锁无限次` });
         return;
       }
 

@@ -1,13 +1,13 @@
 // WriteMaster - Popup Script
 
-// --- API Key Encoding/Decoding ---
+// --- API Key Encoding/Decoding (base64) ---
 function encodeApiKey(key) {
-  return key.split('').map(c => c.charCodeAt(0)).join(',');
+  try { return btoa(key); } catch(e) { return ''; }
 }
 
 function decodeApiKey(encoded) {
   if (!encoded) return '';
-  return encoded.split(',').map(c => String.fromCharCode(parseInt(c))).join('');
+  try { return atob(encoded); } catch(e) { return ''; }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -30,19 +30,16 @@ document.addEventListener('DOMContentLoaded', () => {
     input.type = input.type === 'password' ? 'text' : 'password';
   });
 
-  // Save settings
+  // Save settings (API Key is now optional — built-in key works out of the box)
   document.getElementById('saveBtn').addEventListener('click', () => {
     const apiKey = document.getElementById('apiKey').value.trim();
     const defaultTone = document.getElementById('defaultTone').value;
 
-    if (!apiKey) { showMsg('请输入 API Key', 'error'); return; }
-    if (!apiKey.startsWith('sk-')) { showMsg('API Key 格式错误，应以 sk- 开头', 'error'); return; }
+    if (apiKey && !apiKey.startsWith('sk-')) { showMsg('API Key 格式错误，应以 sk- 开头', 'error'); return; }
 
-    // Encode before storing - hide from plain-text storage
-    const encodedKey = encodeApiKey(apiKey);
-    chrome.storage.sync.set({ apiKey: encodedKey, defaultTone }, () => {
-      showMsg('✅ 设置已保存', 'success');
-    });
+    const data = { defaultTone };
+    if (apiKey) data.apiKey = encodeApiKey(apiKey); // Optional — user's own key
+    chrome.storage.sync.set(data, () => { showMsg('✅ 设置已保存', 'success'); });
   });
 
   // Reset usage (double-click count)
@@ -68,15 +65,15 @@ function loadSettings() {
 }
 
 function loadUsage() {
-  chrome.storage.local.get(['usageCount', 'lastResetMonth'], (result) => {
-    const currentMonth = `${new Date().getFullYear()}-${new Date().getMonth()}`;
-    const isThisMonth = result.lastResetMonth === currentMonth;
-    const count = isThisMonth ? (result.usageCount || 0) : 0;
-    const remaining = Math.max(0, 100 - count);
+  chrome.storage.local.get(['usageCount', 'lastResetDate'], (result) => {
+    const today = new Date().toDateString();
+    const isToday = result.lastResetDate === today;
+    const count = isToday ? (result.usageCount || 0) : 0;
+    const remaining = Math.max(0, 3 - count);
 
     document.getElementById('usageCount').textContent = count;
     document.getElementById('usageRemaining').textContent = remaining;
-    document.getElementById('progressFill').style.width = `${(count / 100) * 100}%`;
+    document.getElementById('progressFill').style.width = `${(count / 3) * 100}%`;
   });
 }
 
