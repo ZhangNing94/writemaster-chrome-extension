@@ -5,8 +5,7 @@
   "description": "在任何网页文本框中提供AI写作辅助，包括润色、改写、续写和翻译",
   "permissions": [
     "storage",
-    "activeTab",
-    "scripting"
+    "activeTab"
   ],
   "host_permissions": [
     "https://api.deepseek.com/*"
